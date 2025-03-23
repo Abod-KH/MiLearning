@@ -2,18 +2,51 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Box, Text, IconButton, VStack, Spinner, useBreakpointValue, Center, HStack } from '@chakra-ui/react';
 import { FaHeart, FaBookmark, FaShare, FaComment, FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress } from 'react-icons/fa';
 import { MdOutlineRectangle } from 'react-icons/md';
-import { Video } from '../../types';
+// import { Video } from '../../types';
 import { useVideo } from '../../context/VideoContext';
 
-interface VideoCardProps {
+// Define local Video interface that matches the data structure
+interface VideoAuthor {
+  id: string;
+  username: string;
+  name: string;
+  avatar: string;
+}
+
+interface Video {
+  id: string;
+  title: string;
+  description: string;
+  videoUrl: string;
+  category: string;
+  thumbnailUrl?: string;
+  author: VideoAuthor;
+  likes?: number;
+  views?: number;
+  createdAt?: string;
+  tags?: string[];
+}
+
+export interface VideoCardProps {
   video: Video;
-  isVisible?: boolean;
   isFirstVideo?: boolean;
+  isVisible?: boolean;
+  isSearchOrSaved?: boolean;
+  isFeedView?: boolean;
+  hasSound?: boolean;
   shouldUnmuteOnLoad?: boolean;
 }
 
-export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, isFirstVideo = false, shouldUnmuteOnLoad = true }) => {
-  const { toggleSaveVideo, savedVideos } = useVideo();
+export const VideoCard: React.FC<VideoCardProps> = ({
+  video,
+  isFirstVideo = false,
+  isVisible = false,
+  isSearchOrSaved = false,
+  isFeedView = false,
+  hasSound = true,
+  shouldUnmuteOnLoad = false
+}) => {
+  const { savedVideos, toggleSaveVideo, updateVideoProgress } = useVideo();
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(video.likes);
   const isSaved = savedVideos.includes(video.id);
@@ -22,39 +55,40 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
   const [hasError, setHasError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(!isFirstVideo);
+  const [progress, setProgress] = useState(0);
 
   // Detect if we're in the feed or in a list view
-  const isFeedView = useBreakpointValue({ 
+  const currentIsFeedView = useBreakpointValue({ 
     base: ["/", "/search", "/saved"].includes(window.location.pathname), 
     md: ["/", "/search", "/saved"].includes(window.location.pathname) 
   });
 
   // Detect if we're in search or saved pages specifically
-  const isSearchOrSaved = window.location.pathname === "/search" || window.location.pathname === "/saved";
+  const currentIsSearchOrSaved = window.location.pathname === "/search" || window.location.pathname === "/saved";
 
   // Responsive values - adjust sizes based on whether we're in feed, search, or saved pages
   const iconSize = useBreakpointValue({ 
-    base: isSearchOrSaved ? 14 : 24, 
-    md: isSearchOrSaved ? 16 : 28 
+    base: currentIsSearchOrSaved ? 14 : 24, 
+    md: currentIsSearchOrSaved ? 16 : 28 
   });
   const buttonSpacing = useBreakpointValue({ 
-    base: isSearchOrSaved ? 1 : 3, 
-    md: isSearchOrSaved ? 2 : 4 
+    base: currentIsSearchOrSaved ? 1 : 3, 
+    md: currentIsSearchOrSaved ? 2 : 4 
   });
   const infoBoxPadding = useBreakpointValue({ base: 3, md: 4 });
   const rightOffset = useBreakpointValue({ 
-    base: isSearchOrSaved ? 1 : 2, 
-    md: isSearchOrSaved ? 2 : 4 
+    base: currentIsSearchOrSaved ? 1 : 2, 
+    md: currentIsSearchOrSaved ? 2 : 4 
   });
   
   // Adjust bottom offset based on view type - this is critical for button visibility
   const bottomOffset = useBreakpointValue({ 
-    base: isFeedView ? "100px" : "40px", 
-    md: isFeedView ? "120px" : "45px" 
+    base: currentIsFeedView ? "100px" : "40px", 
+    md: currentIsFeedView ? "120px" : "45px" 
   });
 
   // Video height based on view mode
-  const videoHeight = isFeedView ? "100%" : "350px";
+  const videoHeight = currentIsFeedView ? "100%" : "350px";
   
   // Control visibility of play/pause button
   const showPlayPauseButton = useBreakpointValue({ 
@@ -79,7 +113,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
       setIsMuted(!(isFirstVideo && shouldUnmuteOnLoad));
       
       // Only autoplay first video or in feed view when visible
-      if (isVisible && ((isFeedView && window.location.pathname === "/") || isFirstVideo)) {
+      if (isVisible && ((currentIsFeedView && window.location.pathname === "/") || isFirstVideo)) {
         videoElement.play()
           .then(() => {
             setIsPlaying(true);
@@ -128,7 +162,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
       videoElement.removeEventListener('error', handleError);
       videoElement.pause();
     };
-  }, [isVisible, isFeedView, isFirstVideo, shouldUnmuteOnLoad]);
+  }, [isVisible, currentIsFeedView, isFirstVideo, shouldUnmuteOnLoad]);
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -206,14 +240,14 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
     // If the video becomes visible
     if (isVisible) {
       // For search/saved pages, only play first video
-      if (isSearchOrSaved && !isFirstVideo) {
+      if (currentIsSearchOrSaved && !isFirstVideo) {
         videoElement.pause();
         setIsPlaying(false);
         return;
       }
       
       // Only play if it's the first visible video or in feed view
-      if (isFirstVideo || isFeedView) {
+      if (isFirstVideo || currentIsFeedView) {
         // Try to play the video
         videoElement.play()
           .then(() => {
@@ -243,7 +277,32 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
       videoElement.pause();
       setIsPlaying(false);
     }
-  }, [isVisible, isFirstVideo, isSearchOrSaved, isFeedView, shouldUnmuteOnLoad]);
+  }, [isVisible, isFirstVideo, currentIsSearchOrSaved, currentIsFeedView, shouldUnmuteOnLoad]);
+
+  // Add progress tracking
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    // Track progress
+    const handleTimeUpdate = () => {
+      if (!videoElement || videoElement.duration === 0) return;
+      
+      const currentProgress = videoElement.currentTime / videoElement.duration;
+      setProgress(currentProgress);
+      
+      // Update the global progress tracking
+      if (videoElement.duration > 0) {
+        updateVideoProgress(video.id, currentProgress);
+      }
+    };
+    
+    videoElement.addEventListener('timeupdate', handleTimeUpdate);
+    
+    return () => {
+      videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+    };
+  }, [video.id, updateVideoProgress]);
 
   return (
     <Box
@@ -252,16 +311,16 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
       height={videoHeight}
       bg="black"
       overflow="hidden"
-      borderRadius={!isFeedView ? "md" : "none"}
-      boxShadow={!isFeedView ? "md" : "none"}
+      borderRadius={!currentIsFeedView ? "md" : "none"}
+      boxShadow={!currentIsFeedView ? "md" : "none"}
     >
       {/* First Video Indicator */}
-      {!isFeedView && isFirstVideo && (
+      {!currentIsFeedView && isFirstVideo && (
         <Box
           position="absolute"
           top={2}
           left={2}
-          bg="blue.500"
+          bg="transparent"
           color="white"
           fontSize="xs"
           fontWeight="bold"
@@ -270,6 +329,8 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
           borderRadius="md"
           zIndex={4}
           opacity={0.9}
+          border="1px solid"
+          borderColor="blue.500"
         >
           Now Playing
         </Box>
@@ -283,6 +344,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
           left="50%"
           transform="translate(-50%, -50%)"
           zIndex={1}
+          bg="transparent"
         >
           <Spinner color="white" size="xl" />
         </Box>
@@ -298,6 +360,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
           textAlign="center"
           color="white"
           zIndex={1}
+          bg="transparent"
         >
           <Text>Failed to load video</Text>
         </Box>
@@ -312,6 +375,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
         justifyContent="center"
         onClick={handleVideoClick}
         position="relative"
+        bg="transparent"
       >
         <video
           ref={videoRef}
@@ -329,37 +393,30 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
           loop
           playsInline
           preload="auto"
-          autoPlay={isVisible && (isFeedView || isFirstVideo)}
+          autoPlay={isVisible && (currentIsFeedView || isFirstVideo)}
         />
         
         {/* Play/Pause Button Overlay */}
-        {showPlayPauseButton && (
+        {(!currentIsFeedView || !isPlaying) && (
           <Center
             position="absolute"
             top="0"
             left="0"
             right="0"
             bottom="0"
-            opacity={isPlaying ? 0 : 0.7}
-            _hover={{ opacity: 0.9 }}
-            transition="opacity 0.3s"
-            bg={isPlaying ? "transparent" : "rgba(0, 0, 0, 0.2)"}
-            pointerEvents={isPlaying ? "none" : "auto"}
+            zIndex={3}
+            cursor="pointer"
+            bg="transparent"
           >
             <IconButton
               aria-label={isPlaying ? "Pause" : "Play"}
-              icon={isPlaying ? <FaPause size={30} /> : <FaPlay size={30} />}
+              icon={isPlaying ? <FaPause size={24} /> : <FaPlay size={24} />}
               variant="unstyled"
-              bg="rgba(0, 0, 0, 0.4)"
+              fontSize="3xl"
               color="white"
-              borderRadius="full"
-              width={isFeedView ? "60px" : "50px"}
-              height={isFeedView ? "60px" : "50px"}
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              _hover={{ transform: 'scale(1.1)', bg: "rgba(0, 0, 0, 0.6)" }}
-              _active={{ transform: 'scale(0.9)' }}
+              bg="transparent"
+              opacity={0.8}
+              _hover={{ opacity: 1 }}
               onClick={(e) => {
                 e.stopPropagation();
                 if (videoRef.current) {
@@ -385,14 +442,16 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
           opacity={0.7}
           _hover={{ opacity: 1 }}
           transition="opacity 0.2s"
+          bg="transparent"
         >
           <IconButton
             aria-label={isMuted ? "Unmute" : "Mute"}
             icon={isMuted ? <FaVolumeMute size={16} /> : <FaVolumeUp size={16} />}
             size="sm"
-            variant="solid"
-            colorScheme="blackAlpha"
+            variant="unstyled"
+            color="white"
             onClick={toggleMute}
+            bg="transparent"
           />
         </Box>
       </Box>
@@ -406,19 +465,18 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
           spacing={buttonSpacing}
           align="center"
           zIndex={5}
-          bg={!isFeedView && isSearchOrSaved ? "rgba(0,0,0,0.7)" : ((!isFeedView) ? "rgba(0,0,0,0.4)" : "transparent")}
-          p={!isFeedView ? (isSearchOrSaved ? 2 : 2) : 0}
-          pb={isSearchOrSaved ? 4 : 2}
-          borderRadius={!isFeedView ? "md" : "none"}
-          maxHeight={isSearchOrSaved ? "180px" : "unset"}
+          bg="transparent"
+          p={!currentIsFeedView ? (currentIsSearchOrSaved ? 2 : 2) : 0}
+          pb={currentIsSearchOrSaved ? 4 : 2}
+          borderRadius={!currentIsFeedView ? "md" : "none"}
+          maxHeight={currentIsSearchOrSaved ? "180px" : "unset"}
         >
           {/* Like Button */}
-          <VStack spacing={isSearchOrSaved ? 0 : 1} align="center">
+          <VStack spacing={currentIsSearchOrSaved ? 0 : 1} align="center">
             <IconButton
               aria-label="Like"
               icon={<FaHeart size={iconSize} />}
               variant="unstyled"
-              color={isLiked ? "red.500" : "white"}
               onClick={handleLike}
               display="flex"
               alignItems="center"
@@ -426,38 +484,40 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
               transition="transform 0.2s"
               _hover={{ transform: 'scale(1.1)' }}
               _active={{ transform: 'scale(0.9)' }}
+              bg="transparent"
+              color={isLiked ? "red.500" : "white"}
             />
-            <Text color="white" fontSize={isSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
+            <Text color="white" fontSize={currentIsSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
               {formatNumber(likesCount || 0)}
             </Text>
           </VStack>
 
           {/* Comment Button */}
-          <VStack spacing={isSearchOrSaved ? 0 : 1} align="center">
+          <VStack spacing={currentIsSearchOrSaved ? 0 : 1} align="center">
             <IconButton
               aria-label="Comment"
               icon={<FaComment size={iconSize} />}
               variant="unstyled"
-              color="white"
               display="flex"
               alignItems="center"
               justifyContent="center"
               transition="transform 0.2s"
               _hover={{ transform: 'scale(1.1)' }}
               _active={{ transform: 'scale(0.9)' }}
+              bg="transparent"
+              color="white"
             />
-            <Text color="white" fontSize={isSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
+            <Text color="white" fontSize={currentIsSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
               {formatNumber(video.views || 0)}
             </Text>
           </VStack>
 
           {/* Save Button */}
-          <VStack spacing={isSearchOrSaved ? 0 : 1} align="center">
+          <VStack spacing={currentIsSearchOrSaved ? 0 : 1} align="center">
             <IconButton
               aria-label="Save"
               icon={<FaBookmark size={iconSize} />}
               variant="unstyled"
-              color={isSaved ? "yellow.400" : "white"}
               onClick={() => toggleSaveVideo(video.id)}
               display="flex"
               alignItems="center"
@@ -465,25 +525,28 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
               transition="transform 0.2s"
               _hover={{ transform: 'scale(1.1)' }}
               _active={{ transform: 'scale(0.9)' }}
+              bg="transparent"
+              color={isSaved ? "yellow.400" : "white"}
             />
-            <Text color="white" fontSize={isSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
-              Save
+            <Text color="white" fontSize={currentIsSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
+              Saved
             </Text>
           </VStack>
 
           {/* Share Button */}
-          <VStack spacing={isSearchOrSaved ? 0 : 1} align="center">
+          <VStack spacing={currentIsSearchOrSaved ? 0 : 1} align="center">
             <IconButton
               aria-label="Share"
               icon={<FaShare size={iconSize} />}
               variant="unstyled"
-              color="white"
               display="flex"
               alignItems="center"
               justifyContent="center"
               transition="transform 0.2s"
               _hover={{ transform: 'scale(1.1)' }}
               _active={{ transform: 'scale(0.9)' }}
+              bg="transparent"
+              color="white"
               onClick={() => {
                 if (navigator.share) {
                   navigator.share({
@@ -504,24 +567,25 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
                 }
               }}
             />
-            <Text color="white" fontSize={isSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
+            <Text color="white" fontSize={currentIsSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
               Share
             </Text>
           </VStack>
 
           {/* Fullscreen Button */}
-          <VStack spacing={isSearchOrSaved ? 0 : 1} align="center">
+          <VStack spacing={currentIsSearchOrSaved ? 0 : 1} align="center">
             <IconButton
               aria-label="Fullscreen"
               icon={<FaExpand size={iconSize} />}
               variant="unstyled"
-              color="white"
               display="flex"
               alignItems="center"
               justifyContent="center"
               transition="transform 0.2s"
               _hover={{ transform: 'scale(1.1)' }}
               _active={{ transform: 'scale(0.9)' }}
+              bg="transparent"
+              color="white"
               onClick={() => {
                 const videoContainer = videoRef.current?.parentElement;
                 if (!videoContainer) return;
@@ -535,7 +599,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
                 }
               }}
             />
-            <Text color="white" fontSize={isSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
+            <Text color="white" fontSize={currentIsSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
               Expand
             </Text>
           </VStack>
@@ -550,16 +614,40 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isVisible = true, i
           left={0}
           right={0}
           p={infoBoxPadding}
-          pb={isFeedView ? "70px" : (isSearchOrSaved ? "200px" : "60px")}
-          background={isFeedView 
-            ? "linear-gradient(transparent, rgba(0,0,0,0.8))" 
-            : "rgba(0,0,0,0.7)"}
+          pb={currentIsFeedView ? "70px" : (currentIsSearchOrSaved ? "200px" : "60px")}
+          background="transparent"
           color="white"
         >
+          {/* Progress bar at top of title area */}
+          <Box 
+            position="relative"
+            height="3px"
+            width="100%" 
+            mb={2}
+            bg="rgba(255,255,255,0.3)"
+            borderRadius="0"
+            overflow="hidden"
+            padding="0"
+            margin="0"
+          >
+            {isVisible && (
+              <Box 
+                position="absolute"
+                top="0"
+                left="0"
+                height="100%" 
+                width={`${progress * 100}%`}
+                bg="red.400"
+                transition="width 0.1s linear"
+                borderRadius="0"
+              />
+            )}
+          </Box>
+          
           <Text fontWeight="bold" mb={1} fontSize={{ base: 'sm', md: 'md' }}>
-            @{video.user?.username || 'user'}
+            @{video.author?.username || 'user'}
           </Text>
-          <Text fontSize={{ base: 'xs', md: 'sm' }} mb={2} noOfLines={isFeedView ? 2 : 1}>
+          <Text fontSize={{ base: 'xs', md: 'sm' }} mb={2} noOfLines={currentIsFeedView ? 2 : 1}>
             {video.description}
           </Text>
         </Box>

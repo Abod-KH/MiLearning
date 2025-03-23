@@ -1,0 +1,329 @@
+import { Video, User, Badge } from '../types';
+
+export const businessVideos: Video[] = [
+  {
+    id: "1",
+    title: "Effective Leadership Tips",
+    description: "Learn essential leadership skills to excel in your role 🚀",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    category: "Leadership",
+    user: {
+      id: "1",
+      username: "leadershipguru",
+      avatar: "https://i.pravatar.cc/150?img=1"
+    },
+    author: {
+      id: "1",
+      username: "leadershipguru",
+      name: "Leadership Guru",
+      avatar: "https://i.pravatar.cc/150?img=1"
+    },
+    likes: 24500,
+    views: 78000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "2",
+    title: "Time Management Hacks",
+    description: "Boost productivity with these time management techniques ⏰",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    category: "Productivity",
+    user: {
+      id: "2",
+      username: "productivitypro",
+      avatar: "https://i.pravatar.cc/150?img=2"
+    },
+    author: {
+      id: "2",
+      username: "productivitypro",
+      name: "Productivity Pro",
+      avatar: "https://i.pravatar.cc/150?img=2"
+    },
+    likes: 18900,
+    views: 65000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "3",
+    title: "Digital Marketing Essentials",
+    description: "Master the basics of digital marketing for business growth 📈",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    category: "Marketing",
+    user: {
+      id: "3",
+      username: "marketingmaster",
+      avatar: "https://i.pravatar.cc/150?img=3"
+    },
+    author: {
+      id: "3",
+      username: "marketingmaster",
+      name: "Marketing Master",
+      avatar: "https://i.pravatar.cc/150?img=3"
+    },
+    likes: 32000,
+    views: 105000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "4",
+    title: "Tech Trends for Business",
+    description: "Stay ahead with these technology trends for modern business 💻",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+    category: "Technology",
+    user: {
+      id: "4",
+      username: "techtrends",
+      avatar: "https://i.pravatar.cc/150?img=4"
+    },
+    author: {
+      id: "4",
+      username: "techtrends",
+      name: "Tech Trends",
+      avatar: "https://i.pravatar.cc/150?img=4"
+    },
+    likes: 21000,
+    views: 72000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "5",
+    title: "Public Speaking Mastery",
+    description: "Conquer your fear of public speaking with these proven techniques 🎤",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+    category: "Personal Development",
+    user: {
+      id: "5",
+      username: "publicspeaker",
+      avatar: "https://i.pravatar.cc/150?img=5"
+    },
+    author: {
+      id: "5",
+      username: "publicspeaker",
+      name: "Public Speaker",
+      avatar: "https://i.pravatar.cc/150?img=5"
+    },
+    likes: 28500,
+    views: 93000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "6",
+    title: "Business Model Canvas",
+    description: "Learn how to use the Business Model Canvas for your startup 📊",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+    category: "Business",
+    user: {
+      id: "6",
+      username: "startupfoundry",
+      avatar: "https://i.pravatar.cc/150?img=6"
+    },
+    author: {
+      id: "6",
+      username: "startupfoundry",
+      name: "Startup Foundry",
+      avatar: "https://i.pravatar.cc/150?img=6"
+    },
+    likes: 19700,
+    views: 67000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "7",
+    title: "Emotional Intelligence at Work",
+    description: "Develop your emotional intelligence for better workplace relationships 🤝",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+    category: "Leadership",
+    user: {
+      id: "7",
+      username: "eqcoach",
+      avatar: "https://i.pravatar.cc/150?img=7"
+    },
+    author: {
+      id: "7",
+      username: "eqcoach",
+      name: "EQ Coach",
+      avatar: "https://i.pravatar.cc/150?img=7"
+    },
+    likes: 31500,
+    views: 102000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "8",
+    title: "Remote Team Management",
+    description: "Best practices for managing remote teams effectively 🌐",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4",
+    category: "Leadership",
+    user: {
+      id: "8",
+      username: "remotework",
+      avatar: "https://i.pravatar.cc/150?img=8"
+    },
+    author: {
+      id: "8",
+      username: "remotework",
+      name: "Remote Work",
+      avatar: "https://i.pravatar.cc/150?img=8"
+    },
+    likes: 26300,
+    views: 85000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "9",
+    title: "Social Media Strategy",
+    description: "Create an effective social media strategy for your business 📱",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
+    category: "Marketing",
+    user: {
+      id: "9",
+      username: "socialmediapro",
+      avatar: "https://i.pravatar.cc/150?img=9"
+    },
+    author: {
+      id: "9",
+      username: "socialmediapro",
+      name: "Social Media Pro",
+      avatar: "https://i.pravatar.cc/150?img=9"
+    },
+    likes: 29800,
+    views: 97000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "10",
+    title: "Financial Planning for Startups",
+    description: "Essential financial planning tips for new businesses 💰",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    category: "Business",
+    user: {
+      id: "10",
+      username: "financeguru",
+      avatar: "https://i.pravatar.cc/150?img=10"
+    },
+    author: {
+      id: "10",
+      username: "financeguru",
+      name: "Finance Guru",
+      avatar: "https://i.pravatar.cc/150?img=10"
+    },
+    likes: 23500,
+    views: 76000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "11",
+    title: "Productivity Tools Showcase",
+    description: "Discover the best productivity tools for professionals ⚒️",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    category: "Productivity",
+    user: {
+      id: "11",
+      username: "toolmaster",
+      avatar: "https://i.pravatar.cc/150?img=11"
+    },
+    author: {
+      id: "11",
+      username: "toolmaster",
+      name: "Tool Master",
+      avatar: "https://i.pravatar.cc/150?img=11"
+    },
+    likes: 20500,
+    views: 69000,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "12",
+    title: "Networking for Success",
+    description: "Build a powerful professional network with these techniques 🔗",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+    category: "Personal Development",
+    user: {
+      id: "12",
+      username: "networkpro",
+      avatar: "https://i.pravatar.cc/150?img=12"
+    },
+    author: {
+      id: "12",
+      username: "networkpro",
+      name: "Network Pro",
+      avatar: "https://i.pravatar.cc/150?img=12"
+    },
+    likes: 27800,
+    views: 91000,
+    createdAt: new Date().toISOString()
+  }
+];
+
+export const businessUsers: User[] = [
+  {
+    id: "1",
+    name: "Alex Johnson",
+    avatarUrl: "https://i.pravatar.cc/150?img=1",
+    videosWatched: 42,
+    badges: [
+      {
+        id: "1",
+        name: "Leadership Expert",
+        description: "Watched 20 leadership videos",
+        iconUrl: "https://picsum.photos/50?random=1"
+      },
+      {
+        id: "2",
+        name: "All-Around Learner",
+        description: "Watched videos in all categories",
+        iconUrl: "https://picsum.photos/50?random=2"
+      }
+    ],
+    savedVideos: ["1", "7", "8"]
+  },
+  {
+    id: "2",
+    name: "Sarah Williams",
+    avatarUrl: "https://i.pravatar.cc/150?img=2",
+    videosWatched: 35,
+    badges: [
+      {
+        id: "1",
+        name: "Marketing Enthusiast",
+        description: "Watched 15 marketing videos",
+        iconUrl: "https://picsum.photos/50?random=3"
+      }
+    ],
+    savedVideos: ["3", "9"]
+  },
+  {
+    id: "3",
+    name: "Michael Chen",
+    avatarUrl: "https://i.pravatar.cc/150?img=3",
+    videosWatched: 51,
+    badges: [
+      {
+        id: "1",
+        name: "Tech Wizard",
+        description: "Watched 25 technology videos",
+        iconUrl: "https://picsum.photos/50?random=4"
+      },
+      {
+        id: "2",
+        name: "Productivity Master",
+        description: "Watched all productivity videos",
+        iconUrl: "https://picsum.photos/50?random=5"
+      }
+    ],
+    savedVideos: ["2", "4", "11"]
+  }
+];
+
+export const businessCategories = [
+  "Leadership",
+  "Productivity",
+  "Marketing",
+  "Technology",
+  "Personal Development",
+  "Business",
+  "Finance",
+  "Entrepreneurship",
+  "Management",
+  "Communication"
+]; 

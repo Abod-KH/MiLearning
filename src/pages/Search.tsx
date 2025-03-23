@@ -1,32 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, VStack, Container, SimpleGrid, Input, InputGroup, InputLeftElement, Text, Center, IconButton, Flex } from '@chakra-ui/react';
-import { FaSearch, FaExpand } from 'react-icons/fa';
-import { SearchBar } from '../components/common/SearchBar';
+import { Box, VStack, Container, SimpleGrid, Input, InputGroup, InputLeftElement, Text, Center, IconButton, Flex, Badge, HStack, Select, useColorMode } from '@chakra-ui/react';
+import { FaSearch, FaExpand, FaFilter, FaTimes } from 'react-icons/fa';
 import { VideoCard } from '../components/video/VideoCard';
 import { useVideo } from '../context/VideoContext';
+import { CategoryFilter } from '../components/common/CategoryFilter';
 
 export const Search: React.FC = () => {
-  const { videos } = useVideo();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredVideos, setFilteredVideos] = useState(videos);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const { videos, searchQuery, setSearchQuery, selectedCategory, filteredVideos } = useVideo();
   const [userInteracted, setUserInteracted] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const videoRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [sortOption, setSortOption] = useState<string>("recent");
+  const { colorMode } = useColorMode();
 
-  useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredVideos(videos);
-    } else {
-      const filtered = videos.filter(
-        video => 
-          video.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (video.user?.username || '').toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredVideos(filtered);
+  // Sort videos based on selected option
+  const sortedVideos = [...filteredVideos].sort((a, b) => {
+    switch (sortOption) {
+      case "popular":
+        return (b.likes || 0) - (a.likes || 0);
+      case "views":
+        return (b.views || 0) - (a.views || 0);
+      case "recent":
+      default:
+        // Since createdAt is a string in ISO format, we can compare directly
+        return new Date(b.createdAt || "").getTime() - new Date(a.createdAt || "").getTime();
     }
-  }, [searchTerm, videos]);
+  });
 
   const toggleFullscreen = (index: number) => {
     const targetElement = videoRefs.current[index];
@@ -61,10 +60,18 @@ export const Search: React.FC = () => {
     };
   }, []);
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
+
   return (
     <Box 
       minHeight="calc(100vh - 60px)" 
-      bg="gray.50" 
+      bg={colorMode === 'dark' ? 'fbDarkBg.300' : 'white'} 
       pt={4}
       pb="70px"
       position="absolute"
@@ -76,31 +83,92 @@ export const Search: React.FC = () => {
     >
       <Container maxW="container.md">
         <VStack spacing={4} align="stretch">
-          <InputGroup>
+          {/* Enhanced Search Input */}
+          <InputGroup size="md">
             <InputLeftElement pointerEvents="none">
-              <FaSearch color="gray.300" />
+              <FaSearch color={colorMode === 'dark' ? 'gray.400' : 'gray.300'} />
             </InputLeftElement>
             <Input
-              placeholder="Search videos"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search videos, creators, or topics"
+              value={searchQuery}
+              onChange={handleSearchChange}
               borderRadius="full"
-              borderColor="gray.300"
+              borderColor={colorMode === 'dark' ? 'fbDarkBg.50' : 'gray.300'}
+              bg={colorMode === 'dark' ? 'fbDarkBg.200' : 'white'}
+              color={colorMode === 'dark' ? 'white' : 'black'}
               _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px blue.500" }}
+              pr={searchQuery ? "3rem" : undefined}
             />
+            {searchQuery && (
+              <Box position="absolute" right="3" top="50%" transform="translateY(-50%)">
+                <IconButton
+                  aria-label="Clear search"
+                  icon={<FaTimes />}
+                  size="sm"
+                  variant="ghost"
+                  onClick={clearSearch}
+                  color={colorMode === 'dark' ? 'white' : undefined}
+                />
+              </Box>
+            )}
           </InputGroup>
           
-          {filteredVideos.length === 0 ? (
-            <Center p={8}>
-              <Text>No videos found matching your search</Text>
+          {/* Category Filter */}
+          <CategoryFilter />
+          
+          {/* Search Summary and Sort Options */}
+          <Flex justify="space-between" align="center" mb={2}>
+            <Box>
+              {(searchQuery || selectedCategory) && (
+                <HStack spacing={2}>
+                  {searchQuery && (
+                    <Badge colorScheme="blue" borderRadius="full" px={2} py={1} fontSize="sm">
+                      Search: {searchQuery}
+                    </Badge>
+                  )}
+                  {selectedCategory && (
+                    <Badge colorScheme="green" borderRadius="full" px={2} py={1} fontSize="sm">
+                      Category: {selectedCategory}
+                    </Badge>
+                  )}
+                </HStack>
+              )}
+              <Text fontSize="sm" color={colorMode === 'dark' ? 'white' : 'gray.600'} mt={1}>
+                {sortedVideos.length} {sortedVideos.length === 1 ? 'video' : 'videos'} found
+              </Text>
+            </Box>
+            
+            {/* Sort Options */}
+            <Select 
+              size="sm" 
+              width="auto" 
+              value={sortOption} 
+              onChange={(e) => setSortOption(e.target.value)}
+              borderRadius="md"
+              bg={colorMode === 'dark' ? 'fbDarkBg.200' : 'white'}
+              color={colorMode === 'dark' ? 'white' : 'black'}
+              borderColor={colorMode === 'dark' ? 'fbDarkBg.50' : 'gray.300'}
+            >
+              <option value="recent">Most Recent</option>
+              <option value="popular">Most Popular</option>
+              <option value="views">Most Viewed</option>
+            </Select>
+          </Flex>
+          
+          {sortedVideos.length === 0 ? (
+            <Center p={8} bg={colorMode === 'dark' ? 'fbDarkBg.200' : 'white'} borderRadius="md" boxShadow="sm">
+              <VStack>
+                <Text fontSize="lg" fontWeight="medium" color={colorMode === 'dark' ? 'white' : 'black'}>No videos found</Text>
+                <Text color={colorMode === 'dark' ? 'white' : 'gray.600'}>Try adjusting your search or filter criteria</Text>
+              </VStack>
             </Center>
           ) : (
             <Box width="100%">
               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} pb={4}>
-                {filteredVideos.map((video, index) => (
+                {sortedVideos.map((video, index) => (
                   <Box
                     key={video.id}
-                    bg="white"
+                    bg={colorMode === 'dark' ? 'fbDarkBg.200' : 'white'} 
                     borderRadius="md"
                     overflow="hidden"
                     boxShadow="md"
@@ -109,9 +177,10 @@ export const Search: React.FC = () => {
                     minHeight="350px"
                   >
                     <VideoCard 
-                      video={video} 
+                      video={video}
                       isVisible={true}
                       isFirstVideo={index === 0} 
+                      isSearchOrSaved={true}
                       shouldUnmuteOnLoad={userInteracted}
                     />
                   </Box>

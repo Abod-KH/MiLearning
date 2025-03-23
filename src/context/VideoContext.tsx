@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Video, VideoProgress } from '../types';
 import { videos as initialVideos, mockUser } from '../data/videos';
+import { businessVideos, businessUsers, businessCategories } from '../data/business_videos';
+import { useAuth } from './AuthContext';
 
 interface VideoContextType {
   videos: Video[];
-  currentUser: typeof mockUser;
+  currentUser: any;
   videoProgress: Record<string, VideoProgress>;
   savedVideos: string[];
   searchQuery: string;
@@ -19,12 +21,23 @@ interface VideoContextType {
 const VideoContext = createContext<VideoContextType | undefined>(undefined);
 
 export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [videos] = useState<Video[]>(initialVideos);
-  const [currentUser] = useState(mockUser);
+  const { currentUser: authUser, isAuthenticated } = useAuth();
+  
+  // Default state values
+  const [videos] = useState<Video[]>(businessVideos);
   const [videoProgress, setVideoProgress] = useState<Record<string, VideoProgress>>({});
-  const [savedVideos, setSavedVideos] = useState<string[]>(mockUser.savedVideos);
+  const [savedVideos, setSavedVideos] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Update saved videos whenever the authenticated user changes
+  useEffect(() => {
+    if (authUser && authUser.savedVideos) {
+      setSavedVideos(authUser.savedVideos);
+    } else {
+      setSavedVideos([]);
+    }
+  }, [authUser]);
 
   const toggleSaveVideo = useCallback((videoId: string) => {
     setSavedVideos(currentSaved => {
@@ -61,7 +74,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <VideoContext.Provider
       value={{
         videos,
-        currentUser,
+        currentUser: authUser || businessUsers[0], // Use auth user or fallback
         videoProgress,
         savedVideos,
         searchQuery,
@@ -80,7 +93,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export const useVideo = () => {
   const context = useContext(VideoContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useVideo must be used within a VideoProvider');
   }
   return context;

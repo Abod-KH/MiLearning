@@ -14,6 +14,12 @@ export interface Video {
     avatar: string;
   };
   createdAt?: string;
+  author: {
+    id: string;
+    username: string;
+    name: string;
+    avatar: string;
+  };
 }
 
 export interface User {

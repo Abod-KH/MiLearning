@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, VStack, Container, Heading, Text, SimpleGrid, Center, IconButton, Flex } from '@chakra-ui/react';
+import { Box, VStack, Container, Heading, Text, SimpleGrid, Center, IconButton, Flex, useColorMode } from '@chakra-ui/react';
 import { FaExpand } from 'react-icons/fa';
 import { VideoCard } from '../components/video/VideoCard';
 import { useVideo } from '../context/VideoContext';
@@ -10,6 +10,7 @@ export const SavedVideos: React.FC = () => {
   const [userInteracted, setUserInteracted] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const videoRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const { colorMode } = useColorMode();
 
   const savedVideosList = videos.filter((video) =>
     savedVideos.includes(video.id)
@@ -51,7 +52,7 @@ export const SavedVideos: React.FC = () => {
   return (
     <Box 
       minHeight="calc(100vh - 60px)" 
-      bg="gray.50" 
+      bg={colorMode === 'dark' ? 'fbDarkBg.300' : 'white'} 
       pt={4}
       pb="70px"
       position="absolute"
@@ -62,17 +63,17 @@ export const SavedVideos: React.FC = () => {
       overflowY="auto"
     >
       <Container maxW="container.md">
-        <VStack spacing={6} align="stretch">
+        <VStack spacing={4} align="stretch">
           <Box>
             <Heading size="lg">Saved Videos</Heading>
-            <Text color="gray.600" mt={2}>
+            <Text color={colorMode === 'dark' ? 'white' : 'gray.600'} mt={2}>
               {savedVideosList.length} videos saved
             </Text>
           </Box>
-
+          
           {savedVideosList.length === 0 ? (
-            <Center p={8}>
-              <Text fontSize="lg" color="gray.500">No saved videos yet</Text>
+            <Center p={8} bg={colorMode === 'dark' ? 'fbDarkBg.200' : 'white'} borderRadius="md" boxShadow="sm">
+              <Text color={colorMode === 'dark' ? 'white' : 'gray.500'}>No saved videos yet</Text>
             </Center>
           ) : (
             <Box width="100%">
@@ -80,18 +81,19 @@ export const SavedVideos: React.FC = () => {
                 {savedVideosList.map((video, index) => (
                   <Box
                     key={video.id}
+                    bg={colorMode === 'dark' ? 'fbDarkBg.200' : 'white'}
                     borderRadius="md"
                     overflow="hidden"
                     boxShadow="md"
-                    bg="white"
                     position="relative"
                     ref={el => videoRefs.current[index] = el}
                     minHeight="350px"
                   >
                     <VideoCard 
-                      video={video} 
+                      video={video}
                       isVisible={true}
                       isFirstVideo={index === 0}
+                      isSearchOrSaved={true}
                       shouldUnmuteOnLoad={userInteracted}
                     />
                   </Box>

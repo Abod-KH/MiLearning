@@ -1,18 +1,44 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, VStack, useBreakpointValue, IconButton } from '@chakra-ui/react';
+import { Box, VStack, useBreakpointValue, IconButton, Spinner, Center, Text, useColorMode } from '@chakra-ui/react';
 import { VideoCard } from './video/VideoCard';
 import { useVideo } from '../context/VideoContext';
 import { FaExpand, FaCompress } from 'react-icons/fa';
 import { MdOutlineRectangle } from 'react-icons/md';
+import { useAuth } from '../context/AuthContext';
+
+// Define Timeout type since NodeJS namespace is not available
+type TimeoutRef = ReturnType<typeof setTimeout>;
 
 export const VideoFeed: React.FC = () => {
   const { videos } = useVideo();
+  const { isAuthenticated } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeout = useRef<NodeJS.Timeout>();
+  const scrollTimeout = useRef<TimeoutRef>();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [userInteracted, setUserInteracted] = useState(true); // Start with true to attempt unmuting
+  const { colorMode } = useColorMode();
+
+  // Initialize feed
+  useEffect(() => {
+    try {
+      setIsLoading(true);
+      
+      // Wait a bit to make sure everything is loaded
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    } catch (error) {
+      console.error("Error initializing video feed:", error);
+      setHasError(true);
+      setIsLoading(false);
+    }
+  }, [isAuthenticated]);
 
   // Responsive width
   const containerWidth = useBreakpointValue({
@@ -23,9 +49,9 @@ export const VideoFeed: React.FC = () => {
 
   // Responsive height (full height minus navigation bar)
   const containerHeight = useBreakpointValue({
-    base: 'calc(100vh - 60px)',    // Mobile
-    md: 'calc(100vh - 60px)',      // Tablet
-    lg: 'calc(100vh - 60px)'       // Desktop
+    base: 'calc(100vh - 55px)',    // Mobile
+    md: 'calc(100vh - 55px)',      // Tablet
+    lg: 'calc(100vh - 55px)'       // Desktop
   });
 
   const [containerHeightPx, setContainerHeightPx] = useState(0);
@@ -33,7 +59,7 @@ export const VideoFeed: React.FC = () => {
   // Calculate container height in pixels
   useEffect(() => {
     const calculateHeight = () => {
-      setContainerHeightPx(window.innerHeight - 60);
+      setContainerHeightPx(window.innerHeight - 55);
     };
     
     calculateHeight();
@@ -71,14 +97,18 @@ export const VideoFeed: React.FC = () => {
       
       // Immediately try to play and unmute the new video
       setTimeout(() => {
-        const videoElements = document.querySelectorAll('video');
-        if (videoElements[newIndex]) {
-          videoElements[newIndex].play()
-            .then(() => {
-              videoElements[newIndex].muted = false;
-              console.log("Auto-played and unmuted video after navigation");
-            })
-            .catch(e => console.error("Failed to autoplay video:", e));
+        try {
+          const videoElements = document.querySelectorAll('video');
+          if (videoElements[newIndex]) {
+            videoElements[newIndex].play()
+              .then(() => {
+                videoElements[newIndex].muted = false;
+                console.log("Auto-played and unmuted video after navigation");
+              })
+              .catch(e => console.error("Failed to autoplay video:", e));
+          }
+        } catch (error) {
+          console.error("Error during video change:", error);
         }
       }, 100);
       
@@ -139,25 +169,29 @@ export const VideoFeed: React.FC = () => {
   useEffect(() => {
     // Function to enable sound on first interaction
     const enableSound = () => {
-      // Find all videos and unmute the current one
-      const videos = document.querySelectorAll('video');
-      const currentVideo = videos[currentVideoIndex];
-      
-      if (currentVideo) {
-        try {
-          // Try to unmute the current video
-          currentVideo.muted = false;
-          
-          // If it's paused, try to play it
-          if (currentVideo.paused) {
-            currentVideo.play().catch(e => console.error("Cannot play after unmute:", e));
+      try {
+        // Find all videos and unmute the current one
+        const videos = document.querySelectorAll('video');
+        const currentVideo = videos[currentVideoIndex];
+        
+        if (currentVideo) {
+          try {
+            // Try to unmute the current video
+            currentVideo.muted = false;
+            
+            // If it's paused, try to play it
+            if (currentVideo.paused) {
+              currentVideo.play().catch(e => console.error("Cannot play after unmute:", e));
+            }
+            
+            console.log("Unmuted video after user interaction");
+            setUserInteracted(true);
+          } catch (e) {
+            console.error("Failed to unmute video:", e);
           }
-          
-          console.log("Unmuted video after user interaction");
-          setUserInteracted(true);
-        } catch (e) {
-          console.error("Failed to unmute video:", e);
         }
+      } catch (error) {
+        console.error("Error in enableSound:", error);
       }
       
       // Remove the event listeners after first interaction
@@ -182,38 +216,76 @@ export const VideoFeed: React.FC = () => {
   // Auto-unmute videos on change
   useEffect(() => {
     const unmuteCurrentVideo = () => {
-      const videos = document.querySelectorAll('video');
-      const currentVideo = videos[currentVideoIndex];
-      
-      if (currentVideo) {
-        try {
-          // Always try to unmute the current video
-          setTimeout(() => {
-            currentVideo.muted = false;
-            console.log("Auto-unmuted video after navigation");
-          }, 300);
-        } catch (e) {
-          console.error("Failed to auto-unmute video:", e);
+      try {
+        const videos = document.querySelectorAll('video');
+        const currentVideo = videos[currentVideoIndex];
+        
+        if (currentVideo) {
+          try {
+            // Always try to unmute the current video
+            setTimeout(() => {
+              currentVideo.muted = false;
+              console.log("Auto-unmuted video after navigation");
+            }, 300);
+          } catch (e) {
+            console.error("Failed to auto-unmute video:", e);
+          }
         }
+      } catch (error) {
+        console.error("Error in unmuteCurrentVideo:", error);
       }
     };
     
     unmuteCurrentVideo();
   }, [currentVideoIndex]);
 
-  if (!videos.length) {
+  if (isLoading) {
     return (
-      <Box 
-        height="100vh" 
+      <Center 
+        height="calc(100vh - 48px)" 
         width="100%" 
-        display="flex" 
-        alignItems="center" 
-        justifyContent="center"
-        color="white"
-        bg="black"
+        color={colorMode === 'dark' ? 'white' : 'gray.800'}
+        bg={colorMode === 'dark' ? '#121212' : 'white'}
+        mt="48px"
       >
-        Loading videos...
-      </Box>
+        <Box textAlign="center">
+          <Spinner size="xl" color={colorMode === 'dark' ? 'white' : 'blue.500'} mb={4} />
+          <Text>Loading videos...</Text>
+        </Box>
+      </Center>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <Center 
+        height="calc(100vh - 48px)" 
+        width="100%" 
+        color={colorMode === 'dark' ? 'white' : 'gray.800'}
+        bg={colorMode === 'dark' ? '#121212' : 'white'}
+        mt="48px"
+      >
+        <Box textAlign="center" p={5}>
+          <Text fontSize="xl" mb={4}>Something went wrong</Text>
+          <Text>Please refresh the page to try again</Text>
+        </Box>
+      </Center>
+    );
+  }
+
+  if (!videos || videos.length === 0) {
+    return (
+      <Center 
+        height="calc(100vh - 48px)" 
+        width="100%" 
+        color={colorMode === 'dark' ? 'white' : 'gray.800'}
+        bg={colorMode === 'dark' ? '#121212' : 'white'}
+        mt="48px"
+      >
+        <Box textAlign="center">
+          <Text>No videos available</Text>
+        </Box>
+      </Center>
     );
   }
 
@@ -224,13 +296,14 @@ export const VideoFeed: React.FC = () => {
       display="flex"
       justifyContent="center"
       alignItems="center"
-      bg="black"
+      bg={colorMode === 'dark' ? '#121212' : 'white'}
       position="fixed"
-      top={0}
+      top="48px"
       left={0}
       right={0}
-      bottom="60px"
+      bottom="55px"
       zIndex={1000}
+      pt={1}
     >
       <Box
         ref={containerRef}
@@ -243,62 +316,48 @@ export const VideoFeed: React.FC = () => {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         boxShadow="dark-lg"
-        bg="black"
+        bg={colorMode === 'dark' ? '#121212' : 'white'}
         maxWidth="100%"
-        maxHeight="100%"
-        transition="width 0.3s ease-in-out"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
       >
+        {/* Fullscreen toggle */}
+        <IconButton
+          aria-label="Toggle fullscreen"
+          icon={isFullscreen ? <MdOutlineRectangle size={20} /> : <FaExpand size={18} />}
+          position="absolute"
+          top={4}
+          right={4}
+          zIndex={20}
+          variant="ghost"
+          color={colorMode === 'dark' ? 'white' : 'gray.800'}
+          onClick={toggleFullscreen}
+          display={{ base: 'none', lg: 'flex' }}
+        />
+        
+        {/* Video Feed */}
         <VStack
           spacing={0}
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
+          align="center"
           height="100%"
-          transform={`translateY(-${currentVideoIndex * 100}vh)`}
-          transition="transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+          transform={`translateY(-${currentVideoIndex * 100}%)`}
+          transition={isScrolling ? "transform 0.3s ease-out" : "none"}
         >
           {videos.map((video, index) => (
             <Box
               key={video.id}
-              height="100vh"
+              height="100%"
               width="100%"
-              position="relative"
-              bg="black"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              overflow="hidden"
               flexShrink={0}
-              pb="60px"
             >
-              <VideoCard 
-                video={video} 
+              <VideoCard
+                video={video}
                 isVisible={index === currentVideoIndex}
-                isFirstVideo={index === 0} 
+                isFirstVideo={index === 0}
+                isFeedView={true}
+                shouldUnmuteOnLoad={userInteracted && index === currentVideoIndex}
               />
             </Box>
           ))}
         </VStack>
-
-        {/* Fullscreen Toggle Button - Only visible on desktop */}
-        <IconButton
-          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-          icon={<MdOutlineRectangle />}
-          position="absolute"
-          top={4}
-          right={4}
-          zIndex={10}
-          colorScheme="whiteAlpha"
-          variant="ghost"
-          onClick={toggleFullscreen}
-          display={{ base: 'none', lg: 'flex' }}
-          _hover={{ transform: 'scale(1.1)' }}
-          transition="transform 0.2s"
-        />
       </Box>
     </Box>
   );
