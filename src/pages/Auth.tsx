@@ -1,16 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Flex, Image, Text, VStack, Heading, useBreakpointValue, useColorModeValue, Icon, Spinner, Center, useColorMode } from '@chakra-ui/react';
-import { FaVideo, FaUsers, FaLightbulb } from 'react-icons/fa';
+import { 
+  Box, 
+  Flex, 
+  Image, 
+  Text, 
+  VStack, 
+  Heading, 
+  useBreakpointValue, 
+  Icon, 
+  Spinner, 
+  Center
+} from '@chakra-ui/react';
+import { keyframes } from '@emotion/react';
+import { FaVideo, FaUsers, FaLightbulb, FaGraduationCap } from 'react-icons/fa';
 import { LoginForm } from '../components/auth/LoginForm';
 import { RegisterForm } from '../components/auth/RegisterForm';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+
+// Create animated components with framer-motion
+const MotionBox = motion(Box);
+const MotionFlex = motion(Flex);
+const MotionImage = motion(Image);
 
 export const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
-  const { colorMode } = useColorMode();
+  
+  // Animation keyframes
+  const float = keyframes`
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  `;
+
+  const pulse = keyframes`
+    0% { opacity: 0.8; }
+    50% { opacity: 1; }
+    100% { opacity: 0.8; }
+  `;
+  
+  const floatAnimation = `${float} 3s ease-in-out infinite`;
+  const pulseAnimation = `${pulse} 2s ease-in-out infinite`;
   
   // Redirect if user is already authenticated
   useEffect(() => {
@@ -21,22 +54,26 @@ export const Auth: React.FC = () => {
   }, [isAuthenticated, navigate]);
   
   const handleToggleForm = () => {
+    // Simple toggle without animations to ensure reliability
+    console.log('Toggling form');
     setIsLogin(!isLogin);
   };
   
-  const bgGradient = useColorModeValue(
-    'linear(to-r, blue.400, purple.500)',
-    'linear(to-r, blue.600, purple.700)'
-  );
-  
+  const bgGradient = 'linear(to-br, blue.500, blue.700)';
   const boxSize = useBreakpointValue({ base: '100%', md: '50%' });
 
   if (isLoading) {
     return (
-      <Center minH="100vh" bg={colorMode === 'dark' ? 'black' : 'gray.50'}>
+      <Center minH="100vh" bg="white">
         <VStack spacing={4}>
-          <Spinner size="xl" color="brand.500" thickness="4px" />
-          <Text color={colorMode === 'dark' ? 'darkText.200' : 'gray.600'}>Loading authentication...</Text>
+          <Spinner 
+            size="xl" 
+            color="blue.500" 
+            thickness="4px" 
+            speed="0.8s"
+            emptyColor="gray.200"
+          />
+          <Text color="gray.700" fontWeight="medium">Loading MiLearning...</Text>
         </VStack>
       </Center>
     );
@@ -52,12 +89,13 @@ export const Auth: React.FC = () => {
       align="center" 
       justify="center" 
       direction={{ base: 'column', md: 'row' }}
-      bg={colorMode === 'dark' ? 'black' : 'gray.50'}
+      bg="white"
+      overflow="hidden"
     >
       {/* Left side - App Info */}
-      <Box 
+      <MotionBox 
         w={boxSize} 
-        h={{ base: '40vh', md: '100vh' }} 
+        h={{ base: '45vh', md: '100vh' }} 
         bgGradient={bgGradient}
         color="white"
         p={{ base: 8, md: 12 }}
@@ -66,54 +104,93 @@ export const Auth: React.FC = () => {
         justifyContent="center"
         position="relative"
         overflow="hidden"
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
       >
-        {/* Decorative bubbles for visual interest */}
-        <Box
+        {/* Animated Background Elements */}
+        <MotionBox
           position="absolute"
           top="10%"
           right="-5%"
           height="300px"
           width="300px"
           borderRadius="full"
-          bg="whiteAlpha.100"
+          bg="whiteAlpha.200"
           zIndex={0}
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotate: [0, 10, 0]
+          }}
+          transition={{ 
+            duration: 8, 
+            repeat: Infinity,
+            ease: "easeInOut" 
+          }}
         />
-        <Box
+        <MotionBox
           position="absolute"
           bottom="-10%"
           left="-5%"
-          height="200px"
-          width="200px"
+          height="250px"
+          width="250px"
           borderRadius="full"
           bg="whiteAlpha.100"
           zIndex={0}
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, -10, 0]
+          }}
+          transition={{ 
+            duration: 7, 
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
         />
         
         <VStack align="flex-start" spacing={6} maxW="500px" mx="auto" position="relative" zIndex={1}>
-          <Image 
-            src="https://seeklogo.com/images/T/tiktok-logo-1F4A5DCD45-seeklogo.com.png" 
-            alt="TikTok Business" 
-            h="60px"
+          <MotionImage 
+            src="/logo1.png" 
+            alt="MiLearning" 
+            h="70px"
             mb={4}
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           />
           
-          <Heading size="2xl" fontWeight="bold" lineHeight="shorter">
-            TikTok for Business Learning
+          <Heading 
+            size="2xl" 
+            fontWeight="bold" 
+            lineHeight="shorter"
+            letterSpacing="tight"
+            bgGradient="linear(to-r, white, blue.100)"
+            bgClip="text"
+          >
+            MiLearning
           </Heading>
           
-          <Text fontSize="xl" opacity={0.9}>
-            Watch, learn, and grow with short-form videos tailored for business professionals.
+          <Text 
+            fontSize="xl" 
+            fontWeight="medium"
+            opacity={0.95}
+            textShadow="0 1px 2px rgba(0,0,0,0.1)"
+          >
+            Elevate your skills with engaging, short-form educational content.
           </Text>
           
-          <Box 
+          <MotionBox 
             w="100%" 
             bg="whiteAlpha.200" 
-            borderRadius="lg" 
+            borderRadius="xl" 
             p={6} 
             backdropFilter="blur(10px)"
             position="relative"
             overflow="hidden"
-            boxShadow="0 4px 20px rgba(0, 0, 0, 0.15)"
+            boxShadow="0 8px 32px rgba(0, 0, 0, 0.15)"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
           >
             <Box
               position="absolute"
@@ -122,27 +199,44 @@ export const Auth: React.FC = () => {
               h="150px"
               w="150px"
               borderRadius="full"
-              bg="whiteAlpha.100"
+              bg="whiteAlpha.200"
               zIndex={0}
             />
             
-            <VStack align="flex-start" spacing={4} position="relative" zIndex={1}>
-              <Flex align="center">
+            <VStack align="flex-start" spacing={5} position="relative" zIndex={1}>
+              <MotionFlex 
+                align="center"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4, duration: 0.3 }}
+              >
                 <Icon as={FaVideo} boxSize={6} mr={3} />
-                <Text fontWeight="bold" fontSize="lg">Short-form Videos</Text>
-              </Flex>
-              <Flex align="center">
+                <Text fontWeight="bold" fontSize="lg">Engaging Video Content</Text>
+              </MotionFlex>
+              
+              <MotionFlex 
+                align="center"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.6, duration: 0.3 }}
+              >
                 <Icon as={FaUsers} boxSize={6} mr={3} />
-                <Text fontWeight="bold" fontSize="lg">Business Community</Text>
-              </Flex>
-              <Flex align="center">
-                <Icon as={FaLightbulb} boxSize={6} mr={3} />
-                <Text fontWeight="bold" fontSize="lg">Learn Professional Skills</Text>
-              </Flex>
+                <Text fontWeight="bold" fontSize="lg">Vibrant Learning Community</Text>
+              </MotionFlex>
+              
+              <MotionFlex 
+                align="center"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.8, duration: 0.3 }}
+              >
+                <Icon as={FaGraduationCap} boxSize={6} mr={3} />
+                <Text fontWeight="bold" fontSize="lg">Professional Skill Growth</Text>
+              </MotionFlex>
             </VStack>
-          </Box>
+          </MotionBox>
         </VStack>
-      </Box>
+      </MotionBox>
       
       {/* Right side - Auth Form */}
       <Box 
@@ -152,23 +246,27 @@ export const Auth: React.FC = () => {
         display="flex"
         alignItems="center"
         justifyContent="center"
-        bg={colorMode === 'dark' ? 'black' : 'white'}
+        bg="white"
+        position="relative"
       >
-        <Box 
+        <MotionBox 
           maxW="450px" 
           w="100%"
           p={6}
           borderRadius="xl"
-          bg={colorMode === 'dark' ? 'black' : 'white'}
-          boxShadow={colorMode === 'dark' ? '0 4px 20px rgba(0, 0, 0, 0.3)' : 'lg'}
-          borderWidth={colorMode === 'dark' ? '1px' : '0'}
-          borderColor={colorMode === 'dark' ? 'gray.800' : 'transparent'}
+          bg="white"
+          boxShadow="xl"
+          borderWidth="1px"
+          borderColor="gray.100"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
         >
           {isLogin ? 
             <LoginForm onToggleForm={handleToggleForm} /> : 
             <RegisterForm onToggleForm={handleToggleForm} />
           }
-        </Box>
+        </MotionBox>
       </Box>
     </Flex>
   );

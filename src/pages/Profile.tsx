@@ -43,7 +43,7 @@ import { EditProfileModal } from '../components/profile/EditProfileModal';
 import { VideoCard } from '../components/video/VideoCard';
 
 export const Profile: React.FC = () => {
-  const { videos, savedVideos } = useVideo();
+  const { videos, savedVideos, likedVideos, watchedVideos, videoProgress } = useVideo();
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -55,9 +55,11 @@ export const Profile: React.FC = () => {
   
   // Filter videos for each tab
   const savedVideoList = videos.filter(video => savedVideos.includes(video.id));
-  // In a real app, you would have actual liked videos data
-  const likedVideoList = videos.slice(0, 3); // Just showing a few sample videos for liked tab
-  const watchedVideoList = videos.slice(2, 5); // Just showing a few sample videos for watched tab
+  const likedVideoList = videos.filter(video => likedVideos.includes(video.id));
+  const watchedVideoList = videos.filter(video => watchedVideos.includes(video.id));
+  
+  // Count videos actually watched
+  const videoWatchCount = watchedVideos.length;
   
   if (!currentUser) {
     return <Box p={5}>Loading profile...</Box>;
@@ -177,7 +179,7 @@ export const Profile: React.FC = () => {
               textAlign="center"
             >
               <Heading size="sm" mb={1} color={colorMode === 'dark' ? 'white' : 'gray.600'}>Videos Watched</Heading>
-              <Heading size="lg" color="blue.500">{currentUser.videosWatched}</Heading>
+              <Heading size="lg" color="blue.500">{videoWatchCount}</Heading>
               <Text color={colorMode === 'dark' ? 'white' : 'gray.500'} fontSize="xs" mt={0}>Total learning progress</Text>
             </Box>
 

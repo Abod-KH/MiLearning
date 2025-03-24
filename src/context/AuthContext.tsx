@@ -26,6 +26,7 @@ interface UserProfile {
     iconUrl: string;
   }>;
   savedVideos: string[];
+  likedVideos?: string[];
 }
 
 interface AuthContextType {
@@ -53,7 +54,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const checkAuth = async () => {
       try {
         const storedUser = localStorage.getItem('tiktok_user');
-        
+
         if (storedUser) {
           const userData = JSON.parse(storedUser);
           setCurrentUser(userData);
@@ -88,13 +89,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return false;
       }
 
-      // Create a user object without the password
+      // Create a sanitized user object (without password) to store in state
       const { password: _, ...safeUserData } = user;
       
-      // Store in localStorage (in a real app, we'd use a token)
-      localStorage.setItem('tiktok_user', JSON.stringify(safeUserData));
-      
-      setCurrentUser(safeUserData as UserProfile);
+      const authenticatedUser: UserProfile = {
+        ...safeUserData,
+        bio: safeUserData.bio || '',
+        avatarUrl: safeUserData.avatarUrl || DEFAULT_AVATAR,
+        following: safeUserData.following || 0,
+        followers: safeUserData.followers || 0,
+        videosWatched: safeUserData.videosWatched || 0,
+        preferences: {
+          darkMode: safeUserData.preferences?.darkMode ?? false,
+          autoplay: safeUserData.preferences?.autoplay ?? true,
+          notifications: safeUserData.preferences?.notifications ?? true
+        },
+        badges: safeUserData.badges || [],
+        savedVideos: safeUserData.savedVideos || [],
+        likedVideos: safeUserData.likedVideos || []
+      };
+
+      // Store in localStorage
+      localStorage.setItem('tiktok_user', JSON.stringify(authenticatedUser));
+
+      setCurrentUser(authenticatedUser);
       setIsAuthenticated(true);
       return true;
     } catch (err) {
@@ -106,14 +124,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const register = async (userData: { 
-    username: string; 
-    password: string; 
-    email: string; 
-    name: string 
-  }): Promise<boolean> => {
+  const register = async (userData: { username: string; password: string; email: string; name: string }): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
+    console.log('Register function called with:', { ...userData, password: '***' });
 
     try {
       // Simulate API delay
@@ -125,17 +139,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       );
 
       if (existingUser) {
+        console.log('Registration failed: Username already exists');
         setError('Username already exists');
         return false;
       }
 
-      // In a real app, we would send this data to an API to create a new user
-      // For our mock implementation, we'll just pretend it succeeded
-      
-      // Create a mock user profile
-      const newUser: UserProfile = {
-        id: (userProfilesData.length + 1).toString(),
+      // Create new user ID
+      const newUserId = `user_${Date.now()}`;
+      console.log('Creating new user with ID:', newUserId);
+
+      // Create mock user for data storage (would go to backend in real app)
+      const newMockUser = {
+        id: newUserId,
         username: userData.username,
+        password: userData.password, // In a real app, this would be hashed on the server
         email: userData.email,
         name: userData.name,
         bio: "",
@@ -149,14 +166,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           notifications: true
         },
         badges: [],
-        savedVideos: []
+        savedVideos: [],
+        likedVideos: []
       };
+
+      // Create new user object without password for state
+      const { password: _, ...safeUserData } = newMockUser;
+      const newUser: UserProfile = safeUserData as UserProfile;
 
       // Store in localStorage
       localStorage.setItem('tiktok_user', JSON.stringify(newUser));
-      
+      console.log('User data stored in localStorage:', { ...newUser });
+
+      // In a real app we would add the user to the database
+      // For our mock, we're just creating the user in memory
+
       setCurrentUser(newUser);
       setIsAuthenticated(true);
+      console.log('Registration successful, user authenticated');
       return true;
     } catch (err) {
       console.error('Registration error:', err);
@@ -185,10 +212,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ...currentUser,
         ...userData
       };
-      
+
       // Store in localStorage
       localStorage.setItem('tiktok_user', JSON.stringify(updatedUser));
-      
+
       setCurrentUser(updatedUser);
       return true;
     } catch (err) {
@@ -231,8 +258,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  
   return context;
 }; 

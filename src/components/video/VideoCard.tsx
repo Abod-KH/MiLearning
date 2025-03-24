@@ -46,16 +46,17 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   hasSound = true,
   shouldUnmuteOnLoad = false
 }) => {
-  const { savedVideos, toggleSaveVideo, updateVideoProgress } = useVideo();
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(video.likes);
+  const { savedVideos, toggleSaveVideo, updateVideoProgress, likedVideos, toggleLikeVideo, isVideoLiked } = useVideo();
+  const [likesCount, setLikesCount] = useState(video.likes || 0);
   const isSaved = savedVideos.includes(video.id);
+  const isLiked = isVideoLiked(video.id);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(!isFirstVideo);
   const [progress, setProgress] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Detect if we're in the feed or in a list view
   const currentIsFeedView = useBreakpointValue({ 
@@ -96,9 +97,30 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     md: true 
   });
 
+  // Check if the video is a YouTube video
+  const isYouTubeVideo = video.videoUrl.includes('youtube.com');
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // YouTube URL parameters
+  const youtubeEmbedUrl = React.useMemo(() => {
+    if (!isYouTubeVideo) return '';
+    const params = new URLSearchParams({
+      autoplay: isVisible && isFirstVideo ? '1' : '0',
+      mute: isMuted ? '1' : '0',
+      enablejsapi: '1',
+      rel: '0',
+      modestbranding: '1',
+      playsinline: '1',
+      controls: '1'
+    });
+    return `${video.videoUrl}?${params.toString()}`;
+  }, [video.videoUrl, isYouTubeVideo, isVisible, isFirstVideo, isMuted]);
+
+  // Video event listeners
   useEffect(() => {
+    if (isYouTubeVideo || !videoRef.current) return;
+    
     const videoElement = videoRef.current;
-    if (!videoElement) return;
 
     const handleLoadStart = () => {
       setIsLoading(true);
@@ -108,16 +130,15 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     const handleCanPlay = () => {
       setIsLoading(false);
       
-      // Set initial muted state - first video should be unmuted if shouldUnmuteOnLoad is true
+      // Set initial muted state
       videoElement.muted = !(isFirstVideo && shouldUnmuteOnLoad);
       setIsMuted(!(isFirstVideo && shouldUnmuteOnLoad));
       
-      // Only autoplay first video or in feed view when visible
+      // Autoplay logic
       if (isVisible && ((currentIsFeedView && window.location.pathname === "/") || isFirstVideo)) {
         videoElement.play()
           .then(() => {
             setIsPlaying(true);
-            // Try to unmute after a short delay if this is the first video
             if (isFirstVideo && shouldUnmuteOnLoad) {
               setTimeout(() => {
                 try {
@@ -131,7 +152,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
           })
           .catch((error) => {
             console.error("Error playing video:", error);
-            // If autoplay fails, try with mute (browser policy)
             videoElement.muted = true;
             setIsMuted(true);
             videoElement.play()
@@ -139,7 +159,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               .catch((err) => console.error("Failed even with mute:", err));
           });
       } else {
-        // Ensure non-first videos are paused
         videoElement.pause();
         setIsPlaying(false);
       }
@@ -150,36 +169,34 @@ export const VideoCard: React.FC<VideoCardProps> = ({
       setHasError(true);
     };
 
-    // Add event listeners
     videoElement.addEventListener('loadstart', handleLoadStart);
     videoElement.addEventListener('canplay', handleCanPlay);
     videoElement.addEventListener('error', handleError);
 
-    // Clean up
     return () => {
       videoElement.removeEventListener('loadstart', handleLoadStart);
       videoElement.removeEventListener('canplay', handleCanPlay);
       videoElement.removeEventListener('error', handleError);
       videoElement.pause();
     };
-  }, [isVisible, currentIsFeedView, isFirstVideo, shouldUnmuteOnLoad]);
+  }, [isVisible, currentIsFeedView, isFirstVideo, shouldUnmuteOnLoad, isYouTubeVideo]);
 
+  // Volume change listener
   useEffect(() => {
+    if (isYouTubeVideo || !videoRef.current) return;
+    
     const videoElement = videoRef.current;
-    if (!videoElement) return;
 
     const handleMuteChange = () => {
       setIsMuted(videoElement.muted);
     };
 
-    // Add event listener for mute change
     videoElement.addEventListener('volumechange', handleMuteChange);
 
-    // Clean up
     return () => {
       videoElement.removeEventListener('volumechange', handleMuteChange);
     };
-  }, [isVisible, isMuted]);
+  }, [isVisible, isMuted, isYouTubeVideo]);
 
   // Toggle mute function
   const toggleMute = (e: React.MouseEvent) => {
@@ -191,11 +208,13 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     }
   };
 
+  // Handle like button click
   const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikesCount(prev => prev !== undefined ? (isLiked ? prev - 1 : prev + 1) : (video.likes || 0));
+    toggleLikeVideo(video.id);
+    setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
   };
 
+  // Format number for display (e.g., 1K, 1M)
   const formatNumber = (num: number | undefined): string => {
     if (!num) return '0';
     if (num >= 1000000) {
@@ -207,18 +226,16 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     return num.toString();
   };
 
-  // For video click, automatically unmute when playing
+  // Handle video click
   const handleVideoClick = () => {
     if (videoRef.current) {
       if (videoRef.current.paused) {
-        // When user clicks to play video, always unmute
         videoRef.current.muted = false;
         setIsMuted(false);
         videoRef.current.play()
           .then(() => setIsPlaying(true))
           .catch(error => {
             console.error("Error playing video:", error);
-            // If play fails, try with mute
             videoRef.current!.muted = true;
             setIsMuted(true);
             videoRef.current!.play()
@@ -232,27 +249,22 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     }
   };
 
-  // Update videoRef when isVisible changes to handle autoplay
+  // Update playback when visibility changes
   useEffect(() => {
     const videoElement = videoRef.current;
     if (!videoElement) return;
 
-    // If the video becomes visible
     if (isVisible) {
-      // For search/saved pages, only play first video
       if (currentIsSearchOrSaved && !isFirstVideo) {
         videoElement.pause();
         setIsPlaying(false);
         return;
       }
       
-      // Only play if it's the first visible video or in feed view
       if (isFirstVideo || currentIsFeedView) {
-        // Try to play the video
         videoElement.play()
           .then(() => {
             setIsPlaying(true);
-            // Try to unmute the video (especially if it's first)
             if (isFirstVideo && shouldUnmuteOnLoad) {
               videoElement.muted = false;
               setIsMuted(false);
@@ -260,7 +272,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
           })
           .catch(error => {
             console.error("Error auto-playing video:", error);
-            // If play fails, try with mute (browser policy)
             videoElement.muted = true;
             setIsMuted(true);
             videoElement.play()
@@ -268,30 +279,27 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               .catch(err => console.error("Failed even with mute:", err));
           });
       } else {
-        // Not first video - ensure it's paused
         videoElement.pause();
         setIsPlaying(false);
       }
     } else {
-      // Pause the video when not visible
       videoElement.pause();
       setIsPlaying(false);
     }
   }, [isVisible, isFirstVideo, currentIsSearchOrSaved, currentIsFeedView, shouldUnmuteOnLoad]);
 
-  // Add progress tracking
+  // Track progress for non-YouTube videos
   useEffect(() => {
+    if (isYouTubeVideo || !videoRef.current) return;
+    
     const videoElement = videoRef.current;
-    if (!videoElement) return;
 
-    // Track progress
     const handleTimeUpdate = () => {
       if (!videoElement || videoElement.duration === 0) return;
       
       const currentProgress = videoElement.currentTime / videoElement.duration;
       setProgress(currentProgress);
       
-      // Update the global progress tracking
       if (videoElement.duration > 0) {
         updateVideoProgress(video.id, currentProgress);
       }
@@ -302,10 +310,72 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     return () => {
       videoElement.removeEventListener('timeupdate', handleTimeUpdate);
     };
-  }, [video.id, updateVideoProgress]);
+  }, [video.id, updateVideoProgress, isYouTubeVideo]);
+
+  // Toggle YouTube playback
+  const toggleYoutubePlayback = () => {
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      if (isPlaying) {
+        iframeRef.current.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        setIsPlaying(false);
+      } else {
+        iframeRef.current.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  // Lazy load YouTube iframes
+  const [shouldLoadYouTube, setShouldLoadYouTube] = useState(isVisible);
+  
+  useEffect(() => {
+    if (isYouTubeVideo && isVisible && !shouldLoadYouTube) {
+      setShouldLoadYouTube(true);
+    }
+  }, [isVisible, isYouTubeVideo, shouldLoadYouTube]);
+
+  // Share video function
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: video.title,
+        text: video.description,
+        url: window.location.href
+      }).catch(err => console.error('Error sharing:', err));
+    } else {
+      // Fallback for browsers that don't support navigator.share
+      alert(`Share this video: ${video.title}\n${window.location.href}`);
+    }
+  };
+
+  // Toggle fullscreen function
+  const toggleFullscreen = () => {
+    const videoContainer = document.getElementById(`video-container-${video.id}`);
+    
+    if (!videoContainer) return;
+
+    if (!document.fullscreenElement) {
+      videoContainer.requestFullscreen()
+        .then(() => {
+          setIsFullscreen(true);
+        })
+        .catch(err => {
+          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+    } else {
+      document.exitFullscreen()
+        .then(() => {
+          setIsFullscreen(false);
+        })
+        .catch(err => {
+          console.error(`Error attempting to exit fullscreen: ${err.message}`);
+        });
+    }
+  };
 
   return (
     <Box
+      id={`video-container-${video.id}`}
       position="relative"
       width="100%"
       height={videoHeight}
@@ -337,321 +407,219 @@ export const VideoCard: React.FC<VideoCardProps> = ({
       )}
       
       {/* Loading Spinner */}
-      {isLoading && (
-        <Box
-          position="absolute"
-          top="50%"
-          left="50%"
-          transform="translate(-50%, -50%)"
-          zIndex={1}
-          bg="transparent"
-        >
-          <Spinner color="white" size="xl" />
-        </Box>
+      {isLoading && !isYouTubeVideo && (
+        <Center position="absolute" top="0" left="0" right="0" bottom="0" zIndex="1">
+          <Spinner size="xl" color="white" />
+        </Center>
       )}
 
       {/* Error Message */}
-      {hasError && (
-        <Box
+      {hasError && !isYouTubeVideo && (
+        <Center position="absolute" top="0" left="0" right="0" bottom="0" bg="blackAlpha.700" zIndex="1">
+          <Text color="white">Video could not be loaded</Text>
+        </Center>
+      )}
+
+      {/* Render YouTube iframe or regular video element */}
+      {isYouTubeVideo ? (
+        shouldLoadYouTube ? (
+          <iframe
+            ref={iframeRef}
+            width="100%"
+            height="100%"
+            src={youtubeEmbedUrl}
+            title={video.title}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            loading="lazy"
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          />
+        ) : (
+          <Center position="absolute" top="0" left="0" right="0" bottom="0" zIndex="1" bg="black">
+            <Spinner size="xl" color="white" />
+          </Center>
+        )
+      ) : (
+        <video
+          ref={videoRef}
+          src={video.videoUrl}
+          controls={false}
+          loop
+          muted={isMuted}
+          playsInline
+          preload="metadata"
+          style={{
+            objectFit: 'cover', 
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0
+          }}
+          onClick={handleVideoClick}
+        />
+      )}
+
+      {/* Play/Pause overlay button */}
+      {showPlayPauseButton && !isYouTubeVideo && (
+        <IconButton
+          aria-label={isPlaying ? "Pause" : "Play"}
+          icon={isPlaying ? <FaPause /> : <FaPlay />}
           position="absolute"
           top="50%"
           left="50%"
           transform="translate(-50%, -50%)"
-          textAlign="center"
-          color="white"
-          zIndex={1}
-          bg="transparent"
-        >
-          <Text>Failed to load video</Text>
-        </Box>
-      )}
-
-      {/* Video Player */}
-      <Box
-        width="100%"
-        height="100%"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        onClick={handleVideoClick}
-        position="relative"
-        bg="transparent"
-      >
-        <video
-          ref={videoRef}
-          src={video.videoUrl}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            maxWidth: '100%',
-            maxHeight: '100%',
-            opacity: isLoading || hasError ? 0 : 1,
-            transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            backgroundColor: 'black'
-          }}
-          loop
-          playsInline
-          preload="auto"
-          autoPlay={isVisible && (currentIsFeedView || isFirstVideo)}
-        />
-        
-        {/* Play/Pause Button Overlay */}
-        {(!currentIsFeedView || !isPlaying) && (
-          <Center
-            position="absolute"
-            top="0"
-            left="0"
-            right="0"
-            bottom="0"
-            zIndex={3}
-            cursor="pointer"
-            bg="transparent"
-          >
-            <IconButton
-              aria-label={isPlaying ? "Pause" : "Play"}
-              icon={isPlaying ? <FaPause size={24} /> : <FaPlay size={24} />}
-              variant="unstyled"
-              fontSize="3xl"
-              color="white"
-              bg="transparent"
-              opacity={0.8}
-              _hover={{ opacity: 1 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (videoRef.current) {
-                  if (videoRef.current.paused) {
-                    videoRef.current.play();
-                    setIsPlaying(true);
-                  } else {
-                    videoRef.current.pause();
-                    setIsPlaying(false);
-                  }
-                }
-              }}
-            />
-          </Center>
-        )}
-        
-        {/* Volume Control */}
-        <Box
-          position="absolute"
-          left={4}
-          bottom={4}
-          zIndex={3}
+          size="lg"
+          variant="ghost"
+          colorScheme="whiteAlpha"
           opacity={0.7}
           _hover={{ opacity: 1 }}
-          transition="opacity 0.2s"
-          bg="transparent"
+          onClick={handleVideoClick}
+          zIndex={2}
+        />
+      )}
+
+      {/* Video controls */}
+      {!isYouTubeVideo && (
+        <HStack 
+          position="absolute" 
+          bottom={4} 
+          left={4} 
+          spacing={2} 
+          zIndex={2}
+          opacity={0.8}
+          _hover={{ opacity: 1 }}
         >
-          <IconButton
-            aria-label={isMuted ? "Unmute" : "Mute"}
-            icon={isMuted ? <FaVolumeMute size={16} /> : <FaVolumeUp size={16} />}
-            size="sm"
-            variant="unstyled"
-            color="white"
-            onClick={toggleMute}
-            bg="transparent"
-          />
-        </Box>
+          {hasSound && (
+            <IconButton
+              aria-label={isMuted ? "Unmute" : "Mute"}
+              icon={isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
+              size="sm"
+              variant="ghost"
+              colorScheme="whiteAlpha"
+              onClick={toggleMute}
+            />
+          )}
+        </HStack>
+      )}
+
+      {/* Video info section */}
+      <Box
+        position="absolute"
+        bottom={0}
+        left={0}
+        right={0}
+        bg="blackAlpha.700"
+        color="white"
+        p={infoBoxPadding}
+        zIndex={1}
+      >
+        <Text fontWeight="bold" fontSize={currentIsSearchOrSaved ? "md" : "lg"} noOfLines={1}>
+          {video.title}
+        </Text>
+        <Text fontSize={currentIsSearchOrSaved ? "sm" : "md"} noOfLines={currentIsSearchOrSaved ? 1 : 2} opacity={0.9}>
+          {video.description}
+        </Text>
+        <HStack mt={1} spacing={1}>
+          <Text fontSize="xs">@{video.author.username}</Text>
+          <Text fontSize="xs" opacity={0.7}>•</Text>
+          <Text fontSize="xs" opacity={0.7}>
+            {video.createdAt ? new Date(video.createdAt).toLocaleDateString() : "Recent"}
+          </Text>
+        </HStack>
       </Box>
 
-      {/* Action Buttons */}
-      {isVisible && (
-        <VStack
-          position="absolute"
-          right={rightOffset}
-          bottom={bottomOffset}
-          spacing={buttonSpacing}
-          align="center"
-          zIndex={5}
-          bg="transparent"
-          p={!currentIsFeedView ? (currentIsSearchOrSaved ? 2 : 2) : 0}
-          pb={currentIsSearchOrSaved ? 4 : 2}
-          borderRadius={!currentIsFeedView ? "md" : "none"}
-          maxHeight={currentIsSearchOrSaved ? "180px" : "unset"}
-        >
-          {/* Like Button */}
-          <VStack spacing={currentIsSearchOrSaved ? 0 : 1} align="center">
-            <IconButton
-              aria-label="Like"
-              icon={<FaHeart size={iconSize} />}
-              variant="unstyled"
-              onClick={handleLike}
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              transition="transform 0.2s"
-              _hover={{ transform: 'scale(1.1)' }}
-              _active={{ transform: 'scale(0.9)' }}
-              bg="transparent"
-              color={isLiked ? "red.500" : "white"}
-            />
-            <Text color="white" fontSize={currentIsSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
-              {formatNumber(likesCount || 0)}
-            </Text>
-          </VStack>
-
-          {/* Comment Button */}
-          <VStack spacing={currentIsSearchOrSaved ? 0 : 1} align="center">
-            <IconButton
-              aria-label="Comment"
-              icon={<FaComment size={iconSize} />}
-              variant="unstyled"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              transition="transform 0.2s"
-              _hover={{ transform: 'scale(1.1)' }}
-              _active={{ transform: 'scale(0.9)' }}
-              bg="transparent"
-              color="white"
-            />
-            <Text color="white" fontSize={currentIsSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
-              {formatNumber(video.views || 0)}
-            </Text>
-          </VStack>
-
-          {/* Save Button */}
-          <VStack spacing={currentIsSearchOrSaved ? 0 : 1} align="center">
-            <IconButton
-              aria-label="Save"
-              icon={<FaBookmark size={iconSize} />}
-              variant="unstyled"
-              onClick={() => toggleSaveVideo(video.id)}
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              transition="transform 0.2s"
-              _hover={{ transform: 'scale(1.1)' }}
-              _active={{ transform: 'scale(0.9)' }}
-              bg="transparent"
-              color={isSaved ? "yellow.400" : "white"}
-            />
-            <Text color="white" fontSize={currentIsSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
-              Saved
-            </Text>
-          </VStack>
-
-          {/* Share Button */}
-          <VStack spacing={currentIsSearchOrSaved ? 0 : 1} align="center">
-            <IconButton
-              aria-label="Share"
-              icon={<FaShare size={iconSize} />}
-              variant="unstyled"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              transition="transform 0.2s"
-              _hover={{ transform: 'scale(1.1)' }}
-              _active={{ transform: 'scale(0.9)' }}
-              bg="transparent"
-              color="white"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: video.title || 'Check out this video',
-                    text: video.description || 'Watch this amazing video',
-                    url: window.location.href,
-                  })
-                  .then(() => console.log('Successfully shared'))
-                  .catch((error) => console.log('Error sharing:', error));
-                } else {
-                  // Fallback for browsers that don't support the Web Share API
-                  navigator.clipboard.writeText(window.location.href)
-                    .then(() => {
-                      console.log("Link copied to clipboard");
-                      // You could add a toast notification here
-                    })
-                    .catch((error) => console.error("Could not copy text: ", error));
-                }
-              }}
-            />
-            <Text color="white" fontSize={currentIsSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
-              Share
-            </Text>
-          </VStack>
-
-          {/* Fullscreen Button */}
-          <VStack spacing={currentIsSearchOrSaved ? 0 : 1} align="center">
-            <IconButton
-              aria-label="Fullscreen"
-              icon={<FaExpand size={iconSize} />}
-              variant="unstyled"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              transition="transform 0.2s"
-              _hover={{ transform: 'scale(1.1)' }}
-              _active={{ transform: 'scale(0.9)' }}
-              bg="transparent"
-              color="white"
-              onClick={() => {
-                const videoContainer = videoRef.current?.parentElement;
-                if (!videoContainer) return;
-                
-                if (!document.fullscreenElement) {
-                  videoContainer.requestFullscreen().catch(err => {
-                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
-                  });
-                } else {
-                  document.exitFullscreen();
-                }
-              }}
-            />
-            <Text color="white" fontSize={currentIsSearchOrSaved ? "2xs" : "xs"} fontWeight="bold">
-              Expand
-            </Text>
-          </VStack>
-        </VStack>
-      )}
-
-      {/* Video Info */}
-      {isVisible && (
+      {/* Video interaction buttons */}
+      <VStack
+        position="absolute"
+        right={rightOffset}
+        bottom={bottomOffset}
+        spacing={buttonSpacing}
+        zIndex={3}
+        align="center"
+        bg="transparent"
+      >
         <Box
-          position="absolute"
-          bottom={0}
-          left={0}
-          right={0}
-          p={infoBoxPadding}
-          pb={currentIsFeedView ? "70px" : (currentIsSearchOrSaved ? "200px" : "60px")}
-          background="transparent"
-          color="white"
+          bg="transparent"
+          borderRadius="full"
+          p={1}
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
         >
-          {/* Progress bar at top of title area */}
-          <Box 
-            position="relative"
-            height="3px"
-            width="100%" 
-            mb={2}
-            bg="rgba(255,255,255,0.3)"
-            borderRadius="0"
-            overflow="hidden"
-            padding="0"
-            margin="0"
-          >
-            {isVisible && (
-              <Box 
-                position="absolute"
-                top="0"
-                left="0"
-                height="100%" 
-                width={`${progress * 100}%`}
-                bg="red.400"
-                transition="width 0.1s linear"
-                borderRadius="0"
-              />
-            )}
-          </Box>
-          
-          <Text fontWeight="bold" mb={1} fontSize={{ base: 'sm', md: 'md' }}>
-            @{video.author?.username || 'user'}
-          </Text>
-          <Text fontSize={{ base: 'xs', md: 'sm' }} mb={2} noOfLines={currentIsFeedView ? 2 : 1}>
-            {video.description}
-          </Text>
+          <IconButton
+            aria-label="Like"
+            icon={<FaHeart color={isLiked ? "#ff2d55" : "white"} size={22} />}
+            onClick={handleLike}
+            size="sm"
+            variant="unstyled"
+            minW="0"
+            h="auto"
+          />
         </Box>
-      )}
+        <Text fontSize="xs" color="white" fontWeight="bold">{formatNumber(likesCount)}</Text>
+        
+        <Box
+          bg="transparent"
+          borderRadius="full"
+          p={1}
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <IconButton
+            aria-label={isSaved ? "Unsave" : "Save"}
+            icon={<FaBookmark color={isSaved ? "#2d88ff" : "white"} size={22} />}
+            onClick={() => toggleSaveVideo(video.id)}
+            size="sm"
+            variant="unstyled"
+            minW="0"
+            h="auto"
+          />
+        </Box>
+        <Text fontSize="xs" color="white" fontWeight="bold">Save</Text>
+        
+        <Box
+          bg="transparent"
+          borderRadius="full"
+          p={1}
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <IconButton
+            aria-label="Share"
+            icon={<FaShare color="white" size={22} />}
+            onClick={handleShare}
+            size="sm"
+            variant="unstyled"
+            minW="0"
+            h="auto"
+          />
+        </Box>
+        <Text fontSize="xs" color="white" fontWeight="bold">Share</Text>
+        
+        <Box
+          bg="transparent"
+          borderRadius="full"
+          p={1}
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <IconButton
+            aria-label="Toggle Fullscreen"
+            icon={isFullscreen ? <FaCompress color="white" size={22} /> : <FaExpand color="white" size={22} />}
+            onClick={toggleFullscreen}
+            size="sm"
+            variant="unstyled"
+            minW="0"
+            h="auto"
+          />
+        </Box>
+        <Text fontSize="xs" color="white" fontWeight="bold">Fullscreen</Text>
+      </VStack>
     </Box>
   );
 }; 
