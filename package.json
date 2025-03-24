@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "framer-motion": "^12.5.0"
+  }
+}
