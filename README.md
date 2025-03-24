@@ -1,101 +1,106 @@
 # MiLearning - Educational TikTok Clone
 
-MiLearning is a modern web application inspired by TikTok, designed specifically for educational content. The platform offers a vertical-scrolling video feed that allows users to discover and engage with short educational videos across various subjects.
+![MiLearning Logo](tiktok_app/public/logo192.png)
 
-![MiLearning App Screenshot](tiktok_app/public/app-screenshot.png)
+## 📚 Project Overview
+
+MiLearning is an educational video platform inspired by TikTok's engaging UI/UX. It provides a seamless browsing experience for educational content with short, focused videos across multiple subjects. The application allows users to explore educational videos in a familiar, swipeable interface while offering features like saving, liking, and searching for content.
 
 ## 🌟 Key Features
 
-- **TikTok-style Video Feed**: Vertical scrolling interface for seamless video consumption
-- **Video Categories**: Browse videos by educational categories
-- **Search Functionality**: Find educational content by keyword or topic
-- **User Authentication**: Create accounts, log in, and maintain personalized profiles
-- **Video Interactions**: Like, save, and share educational videos
-- **User Profiles**: Track liked, saved, and watched videos
+- **TikTok-style Video Feed**: Scroll through educational videos with smooth transitions
+- **Video Categories**: Filter videos by educational categories including Science, Technology, Mathematics, History, and more
+- **Search Functionality**: Find specific videos or topics quickly with robust search capabilities
+- **User Authentication**: Create accounts, log in, and maintain your personal profile
+- **Video Interactions**: Like, save, and share educational content
+- **User Profiles**: Track watched videos, liked content, and saved videos
 - **YouTube Integration**: Seamless playback of YouTube educational content
-- **Responsive Design**: Optimized experience across desktop and mobile devices
-- **Dark Mode Support**: Toggle between light and dark themes for comfortable viewing
+- **Responsive Design**: Works on all device sizes, from mobile to desktop
+- **Dark Mode Support**: Choose between light and dark interface themes
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: React with TypeScript
-- **UI Framework**: Chakra UI
-- **State Management**: React Context API
-- **Authentication**: Custom authentication system
-- **Styling**: CSS-in-JS with Chakra UI
+- **Frontend Framework**: React with TypeScript
+- **Styling**: Chakra UI for responsive, accessible components
+- **State Management**: React Context API for global state
+- **Video Playback**: Custom video players with YouTube integration
+- **Routing**: React Router for navigation
+- **Authentication**: Custom authentication system (with mock backend)
 
 ## 📋 Prerequisites
 
-Before you begin, ensure you have the following installed:
-- Node.js (v14.0.0 or later)
-- npm (v6.0.0 or later)
+- Node.js (v14.0.0 or higher)
+- npm (v6.0.0 or higher)
 
-## 🚀 Installation
+## 🚀 Getting Started
 
-Follow these steps to get the application running locally:
+### Installation
 
-1. **Clone the repository**
+1. Clone the repository:
    ```bash
    git clone https://github.com/yourusername/milearning.git
    cd milearning
    ```
 
-2. **Install dependencies**
+2. Install dependencies:
    ```bash
    cd tiktok_app
    npm install
    ```
 
-3. **Start the development server**
+3. Start the development server:
    ```bash
    npm run dev
    ```
 
-4. **Access the application**
-   - Open your browser and navigate to `http://localhost:5173`
+4. Open your browser and navigate to:
+   ```
+   http://localhost:5173
+   ```
 
-## 🎮 Usage
+## 📱 Usage Guide
 
 ### Home Feed
-- Scroll vertically to navigate between videos
-- Like, save, or share videos using the interaction buttons
-- Toggle sound with the volume button
-- Switch to fullscreen mode with the rectangle icon (desktop only)
+- Swipe up/down to navigate between videos
+- Tap on video to play/pause
+- Use the right sidebar for interactions (like, save, share, fullscreen)
 
 ### Search
-- Navigate to the Search tab
-- Enter keywords in the search bar
-- Filter videos by category using the category chips
-- Sort results by recent, popular, or most viewed
+- Click on the search icon in the navigation bar
+- Enter keywords to find videos
+- Filter results by category using the category tabs
 
-### Authentication
-- Create a new account or log in to an existing one
-- Edit your profile information in the settings section
+### User Authentication
+- Create a new account with email, username, and password
+- Log in with existing credentials
+- Edit your profile by visiting the profile page
 
-### Profile
-- View your liked, saved, and watched videos
-- Adjust preferences in the settings
+### Profile Management
+- View your watched, liked, and saved videos
+- Check your learning progress and achievements
+- Edit your profile information and avatar
 
 ## 📁 Project Structure
 
 ```
-milearning/
-├── tiktok_app/                # Main application directory
-│   ├── public/                # Static files
-│   ├── src/                   # Source code
-│   │   ├── components/        # Reusable UI components
-│   │   ├── context/           # React Context providers
-│   │   ├── data/              # Application data
-│   │   ├── hooks/             # Custom React hooks
-│   │   ├── pages/             # Application pages
-│   │   ├── types/             # TypeScript type definitions
-│   │   ├── utils/             # Utility functions
-│   │   ├── App.tsx            # Main App component
-│   │   └── main.tsx           # Application entry point
-│   ├── index.html             # HTML template
-│   ├── package.json           # Dependencies and scripts
-│   └── tsconfig.json          # TypeScript configuration
-└── README.md                  # Project documentation
+tiktok_app/
+├── public/              # Static assets
+├── src/
+│   ├── components/      # Reusable UI components
+│   │   ├── auth/        # Authentication related components
+│   │   ├── layout/      # Layout components
+│   │   ├── profile/     # User profile components
+│   │   └── video/       # Video player components
+│   ├── context/         # React Context providers
+│   ├── data/            # Mock data for videos and users
+│   ├── hooks/           # Custom React hooks
+│   ├── pages/           # Main application pages
+│   ├── styles/          # Global styles
+│   ├── types/           # TypeScript type definitions
+│   ├── utils/           # Utility functions
+│   ├── App.tsx          # Main App component
+│   └── main.tsx         # Entry point
+└── package.json         # Dependencies and scripts
 ```
 
 ## 🤝 Contributing
@@ -108,19 +113,20 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 📞 Contact
+## 📬 Contact
 
-For questions or feedback, please reach out via GitHub issues or contact:
-- [Your Name](https://github.com/yourusername)
+If you have any questions or feedback, please reach out to:
+- [your.email@example.com](mailto:your.email@example.com)
+- [Your GitHub Profile](https://github.com/yourusername)
 
 ## 🙏 Acknowledgements
 
 - [React](https://reactjs.org/)
 - [Chakra UI](https://chakra-ui.com/)
+- [React Router](https://reactrouter.com/)
 - [Vite](https://vitejs.dev/)
-- [React Icons](https://react-icons.github.io/react-icons/)
-- All educational content providers featured in the app 
+- Educational content providers 

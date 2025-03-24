@@ -1,0 +1,144 @@
+[
+  {
+    "id": "1",
+    "username": "alexjohnson",
+    "password": "password123",
+    "email": "alex@example.com",
+    "name": "Alex Johnson",
+    "bio": "Digital marketing expert | Leadership enthusiast",
+    "avatarUrl": "https://i.pravatar.cc/150?img=1",
+    "following": 124,
+    "followers": 432,
+    "videosWatched": 42,
+    "preferences": {
+      "darkMode": false,
+      "autoplay": true,
+      "notifications": true
+    },
+    "badges": [
+      {
+        "id": "1",
+        "name": "Leadership Expert",
+        "description": "Watched 20 leadership videos",
+        "iconUrl": "https://picsum.photos/50?random=1"
+      },
+      {
+        "id": "2",
+        "name": "All-Around Learner",
+        "description": "Watched videos in all categories",
+        "iconUrl": "https://picsum.photos/50?random=2"
+      }
+    ],
+    "savedVideos": ["1", "7", "8"]
+  },
+  {
+    "id": "2",
+    "username": "sarahwilliams",
+    "password": "sarah2023",
+    "email": "sarah@example.com",
+    "name": "Sarah Williams",
+    "bio": "Creative director | Marketing strategist | Content creator",
+    "avatarUrl": "https://i.pravatar.cc/150?img=2",
+    "following": 87,
+    "followers": 256,
+    "videosWatched": 35,
+    "preferences": {
+      "darkMode": true,
+      "autoplay": false,
+      "notifications": true
+    },
+    "badges": [
+      {
+        "id": "1",
+        "name": "Marketing Enthusiast",
+        "description": "Watched 15 marketing videos",
+        "iconUrl": "https://picsum.photos/50?random=3"
+      }
+    ],
+    "savedVideos": ["3", "9"]
+  },
+  {
+    "id": "3",
+    "username": "michaelchen",
+    "password": "tech1234",
+    "email": "michael@example.com",
+    "name": "Michael Chen",
+    "bio": "Tech entrepreneur | Product manager | Always learning",
+    "avatarUrl": "https://i.pravatar.cc/150?img=3",
+    "following": 156,
+    "followers": 523,
+    "videosWatched": 51,
+    "preferences": {
+      "darkMode": false,
+      "autoplay": true,
+      "notifications": false
+    },
+    "badges": [
+      {
+        "id": "1",
+        "name": "Tech Wizard",
+        "description": "Watched 25 technology videos",
+        "iconUrl": "https://picsum.photos/50?random=4"
+      },
+      {
+        "id": "2",
+        "name": "Productivity Master",
+        "description": "Watched all productivity videos",
+        "iconUrl": "https://picsum.photos/50?random=5"
+      }
+    ],
+    "savedVideos": ["2", "4", "11"]
+  },
+  {
+    "id": "4",
+    "username": "emilyjones",
+    "password": "emily456",
+    "email": "emily@example.com",
+    "name": "Emily Jones",
+    "bio": "Startup founder | Speaker | Leadership coach",
+    "avatarUrl": "https://i.pravatar.cc/150?img=4",
+    "following": 102,
+    "followers": 378,
+    "videosWatched": 38,
+    "preferences": {
+      "darkMode": true,
+      "autoplay": true,
+      "notifications": true
+    },
+    "badges": [
+      {
+        "id": "1",
+        "name": "Business Builder",
+        "description": "Watched 15 business videos",
+        "iconUrl": "https://picsum.photos/50?random=6"
+      }
+    ],
+    "savedVideos": ["6", "10"]
+  },
+  {
+    "id": "5",
+    "username": "jamesdavis",
+    "password": "james789",
+    "email": "james@example.com",
+    "name": "James Davis",
+    "bio": "Financial advisor | Investment strategist | Business mentor",
+    "avatarUrl": "https://i.pravatar.cc/150?img=5",
+    "following": 73,
+    "followers": 214,
+    "videosWatched": 29,
+    "preferences": {
+      "darkMode": false,
+      "autoplay": false,
+      "notifications": false
+    },
+    "badges": [
+      {
+        "id": "1",
+        "name": "Finance Pro",
+        "description": "Watched 10 finance videos",
+        "iconUrl": "https://picsum.photos/50?random=7"
+      }
+    ],
+    "savedVideos": ["5", "12"]
+  }
+] 
